@@ -6,3 +6,4 @@ umap-learn
 scikit-learn
 sentence_transformers
 streamlit
+plotly
