@@ -1,8 +1,6 @@
-import random
 import torch
 import numpy as np
 from umap import UMAP
-import streamlit as st
 from sentence_generator import augmented_sentences
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.cluster import AgglomerativeClustering
@@ -18,7 +16,6 @@ Aggl_clustering = AgglomerativeClustering(n_clusters=3)
 if torch.cuda.is_available():
 	torch.cuda.manual_seed_all(random_seed)
 
-@st.cache_data
 def get_embeddings():
     model = SentenceTransformer('all-MiniLM-L6-v2')
     sentence_embedding = model.encode(augmented_sentences)

@@ -2,14 +2,12 @@ import random
 from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-import streamlit as st
-st.set_page_config(layout='wide')
+
 import nltk
 nltk.download('punkt')
 nltk.download('wordnet')
 nltk.download('stopwords')
 
-@st.cache_data
 def generate_sentences():
     def synonym_replacement(sentence, n=1):
         words = word_tokenize(sentence)

@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from sentence_generator import augmented_sentences
 from embedders import umap_embeddings_3d,cluster_labels_3d,umap_embeddings_2d,cluster_labels_2d,normalized_coordinates,coordinates_labels
-
+st.set_page_config(layout='wide')
 coordinate_colors = ['#0E1117','#FF6978','#340068','#F9A03F','#0E1117']
 cluster_colors = ['#FF6978','#340068','#F9A03F']
 st.title("Model Embeddings Visualizations")
