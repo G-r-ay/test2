@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import pandas as pd
 import streamlit as st
 import plotly.express as px
@@ -58,17 +59,68 @@ with st.container():
 st.write("<br>", unsafe_allow_html=True)
 #----------------------------------------------------------------------------------------------------
 
+
+
+def update_dimension_subset(start_dim, end_dim, df):
+    subset_df = df.iloc[:, start_dim:end_dim]
+    return subset_df
+
+if 'start_dim' not in st.session_state:
+    st.session_state.start_dim = 0
+if 'end_dim' not in st.session_state:
+    st.session_state.end_dim = 5
+
 with st.container():
-    df = pd.DataFrame(normalized_coordinates, columns=['1st Dimension', '2nd Dimension', '3rd Dimension', '4th Dimension', '5th Dimension'])
+    df = pd.DataFrame(normalized_coordinates, columns=[f'{i+1}st Dimension' for i in range(normalized_coordinates.shape[1])])
     df['Category'] = coordinates_labels
 
-    fig = px.parallel_coordinates(df.drop('Category', axis=1), color=df["Category"], color_continuous_scale=cluster_colors)
+    fig = px.parallel_coordinates(df.iloc[:, st.session_state.start_dim:st.session_state.end_dim].join(df['Category'].rename('Category_Label')), color='Category_Label', color_continuous_scale='viridis')
     fig.update_layout(coloraxis_showscale=False) 
     fig.update_layout(margin=dict(l=30, r=30, b=0, t=100))
     fig.update_layout(title="Parallel Coordinates of Embeddings")
-    st.plotly_chart(fig,use_container_width=True)
+    chart = st.plotly_chart(fig, use_container_width=True)
 
+    # Checkbox for automatic update
+    auto_update = st.checkbox('Automatic Update')
 
+    # Button to move through the dimensions manually
+    if st.button('Next Dimensions') and not auto_update:
+        st.session_state.start_dim += 2
+        st.session_state.end_dim += 2
+        if st.session_state.end_dim > len(df.columns):
+            st.session_state.start_dim = 0
+            st.session_state.end_dim = 5
+        elif st.session_state.start_dim >= len(df.columns):
+            st.session_state.start_dim = 0
+            st.session_state.end_dim = min(5, len(df.columns))
+        
+        # Update the displayed plot with the new subset of dimensions
+        subset_df = update_dimension_subset(st.session_state.start_dim, st.session_state.end_dim, df)
+        fig.data[0]['dimensions'] = [dict(range=[min(subset_df.iloc[:, i]), max(subset_df.iloc[:, i])], label=subset_df.columns[i], values=subset_df.iloc[:, i]) for i in range(len(subset_df.columns))]
+        chart.plotly_chart(fig, use_container_width=True)
+
+    # Automatic update every 2 seconds
+    if auto_update:
+        start_time = time.time()
+        while True:
+            current_time = time.time()
+            if current_time - start_time >= 2:
+                start_time = current_time
+                st.session_state.start_dim += 2
+                st.session_state.end_dim += 2
+                if st.session_state.end_dim > len(df.columns):
+                    st.session_state.start_dim = 0
+                    st.session_state.end_dim = 5
+                elif st.session_state.start_dim >= len(df.columns):
+                    st.session_state.start_dim = 0
+                    st.session_state.end_dim = min(5, len(df.columns))
+                
+                # Update the displayed plot with the new subset of dimensions
+                subset_df = update_dimension_subset(st.session_state.start_dim, st.session_state.end_dim, df)
+                fig.data[0]['dimensions'] = [dict(range=[min(subset_df.iloc[:, i]), max(subset_df.iloc[:, i])], label=subset_df.columns[i], values=subset_df.iloc[:, i]) for i in range(len(subset_df.columns))]
+                chart.plotly_chart(fig, use_container_width=True)
+            else:
+                time.sleep(0.1)  # sleep for 0.1 seconds before checking again
 #----------------------------------------------------------------------------------------------------
 st.write("<br>", unsafe_allow_html=True)
 #----------------------------------------------------------------------------------------------------

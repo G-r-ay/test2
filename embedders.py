@@ -27,12 +27,12 @@ umap_3d = UMAP(n_components=3,metric="cosine",n_neighbors=sentence_embedding.sha
 umap_embeddings_3d = umap_3d.fit_transform(sentence_embedding)
 cluster_labels_3d = Aggl_clustering.fit_predict(umap_embeddings_3d) + 1
 
-umap_coorindates = UMAP(n_components=5,metric="euclidean",n_neighbors=sentence_embedding.shape[0]-1)
+umap_coorindates = UMAP(n_components=20,metric="euclidean",n_neighbors=sentence_embedding.shape[0]-1)
 embeddings_coordinates = scaler.fit_transform(umap_coorindates.fit_transform(sentence_embedding))
 coordinates_labels = Aggl_clustering.fit_predict(embeddings_coordinates)
 l1_norms = np.linalg.norm(embeddings_coordinates, ord=1, axis=0)
 normalized_coordinates = embeddings_coordinates / l1_norms
-
+print(normalized_coordinates.shape)
 umap_2d = UMAP(n_components=2,metric="euclidean",n_neighbors=sentence_embedding.shape[0]-1)
 umap_embeddings_2d = umap_2d.fit_transform(sentence_embedding)
 cluster_labels_2d = Aggl_clustering.fit_predict(umap_embeddings_3d) + 1
