@@ -84,20 +84,38 @@ with st.container():
     auto_update = st.checkbox('Automatic Update')
 
     # Button to move through the dimensions manually
-    if st.button('Next Dimensions') and not auto_update:
-        st.session_state.start_dim += 2
-        st.session_state.end_dim += 2
-        if st.session_state.end_dim > len(df.columns):
-            st.session_state.start_dim = 0
-            st.session_state.end_dim = 5
-        elif st.session_state.start_dim >= len(df.columns):
-            st.session_state.start_dim = 0
-            st.session_state.end_dim = min(5, len(df.columns))
+#    if st.button('Next Dimensions') and not auto_update:
+#        st.session_state.start_dim += 2
+#        st.session_state.end_dim += 2
+#        if st.session_state.end_dim > len(df.columns):
+#            st.session_state.start_dim = 0
+#           st.session_state.end_dim = 5
+#        elif st.session_state.start_dim >= len(df.columns):
+#            st.session_state.start_dim = 0
+#            st.session_state.end_dim = min(5, len(df.columns))
         
-        # Update the displayed plot with the new subset of dimensions
-        subset_df = update_dimension_subset(st.session_state.start_dim, st.session_state.end_dim, df)
-        fig.data[0]['dimensions'] = [dict(range=[min(subset_df.iloc[:, i]), max(subset_df.iloc[:, i])], label=subset_df.columns[i], values=subset_df.iloc[:, i]) for i in range(len(subset_df.columns))]
-        chart.plotly_chart(fig, use_container_width=True)
+#        # Update the displayed plot with the new subset of dimensions
+#        subset_df = update_dimension_subset(st.session_state.start_dim, st.session_state.end_dim, df)
+#        fig.data[0]['dimensions'] = [dict(range=[min(subset_df.iloc[:, i]), max(subset_df.iloc[:, i])], label=subset_df.columns[i], values=subset_df.iloc[:, i]) for i in range(len(subset_df.columns))]
+#       chart.plotly_chart(fig, use_container_width=True)
+
+# new EP code
+# Slider to move through the dimensions manually
+    max_dim = len(df.columns) - 1
+    start_dim = st.slider('Select Start Dimension', 0, max_dim, st.session_state.start_dim)
+
+# Update start and end dimensions
+    st.session_state.start_dim = start_dim
+    st.session_state.end_dim = start_dim + 5
+    if st.session_state.end_dim > len(df.columns):
+        st.session_state.end_dim = len(df.columns)
+
+# Update the displayed plot
+    subset_df = update_dimension_subset(st.session_state.start_dim, st.session_state.end_dim, df)
+    fig.data[0]['dimensions'] = [dict(range=[min(subset_df.iloc[:, i]), max(subset_df.iloc[:, i])], 
+    label=subset_df.columns[i], values=subset_df.iloc[:, i]) for i in range(len(subset_df.columns))]
+    chart.plotly_chart(fig, use_container_width=True)
+# same code below
 
     # Automatic update every 2 seconds
     if auto_update:
