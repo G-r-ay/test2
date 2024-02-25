@@ -117,7 +117,7 @@ with st.container():
                     st.session_state.start_dim = 0
                     st.session_state.end_dim = min(5, len(df.columns))
                 
-                subset_df = update_dimension_subset(st.session_state.start_dim, st.session_state.end_dim, df)
+                subset_df = update_dimension_subset(st.session_state.start_dim, st.session_state.end_dim+1, df)
                 fig.data[0]['dimensions'] = [dict(range=[min(subset_df.iloc[:, i]), max(subset_df.iloc[:, i])], label=subset_df.columns[i], values=subset_df.iloc[:, i]) for i in range(len(subset_df.columns))]
                 chart.plotly_chart(fig, use_container_width=True)
             else:
