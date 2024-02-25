@@ -101,7 +101,7 @@ with st.container():
         chart.plotly_chart(fig, use_container_width=True)
 
 
-    auto_update = st.checkbox('Automatic Update')
+    auto_update = st.checkbox('Continuous Data Flow')
     if auto_update:
         start_time = time.time()
         while True:
