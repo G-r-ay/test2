@@ -21,6 +21,7 @@ hours_per_day = st.slider("Average Hours Per Day", 1, 24, 8)
 st.header("Advanced Warehouse Usage Options")
 auto_suspend = st.checkbox("Use Auto-Suspend", value=True)
 auto_resume = st.checkbox("Use Auto-Resume", value=True)
+warehouse_type = st.radio("Warehouse Type", ["Standard", "Snowpark-Optimized"])
 
 # Input storage resources
 st.header("Storage Costs")
@@ -52,6 +53,12 @@ credits_per_hour = {
     "4X-Large": 128,
 }
 
+# Snowpark-Optimized warehouses consume more credits
+warehouse_type_multiplier = {
+    "Standard": 1.0,
+    "Snowpark-Optimized": 1.5,  # Adjust this multiplier based on actual Snowflake data
+}
+
 # Storage costs (example values)
 storage_cost_per_tb = {
     "Standard": 23,
@@ -68,7 +75,7 @@ transfer_cost_per_tb = {
 
 # Calculate estimated costs
 selected_plan_cost_per_credit = cost_per_credit[plan]
-selected_warehouse_credits_per_hour = credits_per_hour[warehouse_size]
+selected_warehouse_credits_per_hour = credits_per_hour[warehouse_size] * warehouse_type_multiplier[warehouse_type]
 estimated_daily_credits = num_warehouses * selected_warehouse_credits_per_hour * hours_per_day
 estimated_monthly_credits = estimated_daily_credits * 30  # Assuming 30 days in a month
 estimated_monthly_compute_cost = estimated_monthly_credits * selected_plan_cost_per_credit
@@ -86,6 +93,7 @@ total_estimated_monthly_cost = estimated_monthly_compute_cost + estimated_storag
 st.header("Estimated Cost")
 st.write(f"**Plan:** {plan}")
 st.write(f"**Warehouse Size:** {warehouse_size}")
+st.write(f"**Warehouse Type:** {warehouse_type}")
 st.write(f"**Estimated Monthly Compute Cost:** ${estimated_monthly_compute_cost:,.2f}")
 st.write(f"**Estimated Monthly Storage Cost:** ${estimated_storage_cost:,.2f}")
 st.write(f"**Estimated Monthly Data Transfer Cost:** ${estimated_transfer_cost:,.2f}")
