@@ -1,150 +1,104 @@
-import numpy as np
-import time
-import pandas as pd
 import streamlit as st
-import plotly.express as px
-import plotly.graph_objects as go
-from sentence_generator import augmented_sentences
-from embedders import umap_embeddings_3d,cluster_labels_3d,umap_embeddings_2d,cluster_labels_2d,normalized_coordinates,coordinates_labels
-st.set_page_config(layout='wide')
-coordinate_colors = ['#0E1117','#FF6978','#340068','#F9A03F','#0E1117']
-cluster_colors = ['#FF6978','#340068','#F9A03F']
-st.title("Model Embeddings Visualizations")
 
+# Basic information and plans
+st.title("Snowflake Cost Estimator")
 
-def update_dimension_subset(start_dim, end_dim, df):
-    subset_df = df.iloc[:, start_dim:end_dim]
-    return subset_df
+st.markdown("""
+This tool allows you to estimate the cost of running your application on Snowflake based on your compute resources, storage needs, data transfer, and the Snowflake plan you choose.
+""")
 
-with st.container():
-    embedding_traces = []
-    for i, cluster_label in enumerate(np.unique(cluster_labels_3d)):
-        cluster_points = umap_embeddings_3d[cluster_labels_3d == cluster_label]
-        cluster_text = [augmented_sentences[j] for j, label in enumerate(cluster_labels_3d) if label == cluster_label]
-        trace = go.Scatter3d(
-            x=cluster_points[:, 0],
-            y=cluster_points[:, 1],
-            z=cluster_points[:, 2],
-            mode='markers',
-            marker=dict(
-                size=5,
-                color=cluster_colors[i],
-                opacity=0.8
-            ),
-            text=cluster_text,
-            hoverinfo='text',
-            name=f'Cluster {cluster_label}' 
-        )
-        embedding_traces.append(trace)
+# Select Snowflake plan
+st.header("Choose Your Snowflake Plan")
+plan = st.selectbox("Snowflake Plan", ["Standard", "Enterprise", "Business Critical", "Virtual Private Snowflake (VPS)"])
 
-    embedding_figure = go.Figure(data=embedding_traces)
+# Input compute resources
+st.header("Compute Resources")
+num_warehouses = st.number_input("Number of Warehouses", min_value=1, value=1)
+warehouse_size = st.selectbox("Warehouse Size", ["X-Small", "Small", "Medium", "Large", "X-Large", "2X-Large", "3X-Large", "4X-Large"])
+hours_per_day = st.slider("Average Hours Per Day", 1, 24, 8)
 
-    embedding_figure.update_traces(marker_size=5)
+# Advanced warehouse usage options
+st.header("Advanced Warehouse Usage Options")
+auto_suspend = st.checkbox("Use Auto-Suspend", value=True)
+auto_resume = st.checkbox("Use Auto-Resume", value=True)
 
-    embedding_figure.update_layout(margin=dict(l=0, r=0, b=0, t=30))
-    camera = dict(
-        up=dict(x=1, y=0, z=1), center=dict(x=0, y=0, z=0), eye=dict(x=0, y=0, z=1.25)
-    )
-    embedding_figure.update_layout(
-        title="3D Visualization of Sequence Embeddings",
-        scene=dict(
-            xaxis_title="X",
-            yaxis_title="Y",
-            zaxis_title="Z",
-            xaxis=dict(showticklabels=False),
-            yaxis=dict(showticklabels=False),
-            zaxis=dict(showticklabels=False)
-    )
-    )
-    embedding_figure.update_layout(scene_camera=camera)
+# Input storage resources
+st.header("Storage Costs")
+storage_tb = st.number_input("Data Stored (TB)", min_value=0.1, value=1.0)
+storage_type = st.selectbox("Storage Type", ["Standard", "Time Travel", "Fail-safe"])
 
-    st.plotly_chart(embedding_figure, use_container_width=True)
+# Input data transfer
+st.header("Data Transfer Costs")
+data_transfer_tb = st.number_input("Data Transfer (TB)", min_value=0.1, value=1.0)
+transfer_type = st.selectbox("Transfer Type", ["Intra-Region", "Inter-Region", "Inter-Cloud"])
 
-#----------------------------------------------------------------------------------------------------
-st.write("<br>", unsafe_allow_html=True)
-#----------------------------------------------------------------------------------------------------
+# Cost per credit for each plan (example values, adjust as needed)
+cost_per_credit = {
+    "Standard": 2.0,
+    "Enterprise": 2.5,
+    "Business Critical": 3.0,
+    "Virtual Private Snowflake (VPS)": 4.0,
+}
 
-with st.container():
-    df = pd.DataFrame(normalized_coordinates, columns=[f'{i+1}st Dimension' for i in range(normalized_coordinates.shape[1])])
-    df['Category'] = coordinates_labels
+# Compute resources to credits conversion (example conversion rates)
+credits_per_hour = {
+    "X-Small": 1,
+    "Small": 2,
+    "Medium": 4,
+    "Large": 8,
+    "X-Large": 16,
+    "2X-Large": 32,
+    "3X-Large": 64,
+    "4X-Large": 128,
+}
 
+# Storage costs (example values)
+storage_cost_per_tb = {
+    "Standard": 23,
+    "Time Travel": 46,
+    "Fail-safe": 92,
+}
 
-    if 'start_dim' not in st.session_state:
-        st.session_state.start_dim =  1
-    if 'end_dim' not in st.session_state:
-        st.session_state.end_dim =  5
+# Data transfer costs (example values)
+transfer_cost_per_tb = {
+    "Intra-Region": 0.00,  # Free within the same region
+    "Inter-Region": 9.0,
+    "Inter-Cloud": 20.0,
+}
 
-    max_dimensions = len(df.columns) -  1
-    slider_value = st.slider('Select Start Dimension',  1, max_dimensions)
-    st.session_state.start_dim = slider_value
-    st.session_state.end_dim = st.session_state.start_dim +  4
+# Calculate estimated costs
+selected_plan_cost_per_credit = cost_per_credit[plan]
+selected_warehouse_credits_per_hour = credits_per_hour[warehouse_size]
+estimated_daily_credits = num_warehouses * selected_warehouse_credits_per_hour * hours_per_day
+estimated_monthly_credits = estimated_daily_credits * 30  # Assuming 30 days in a month
+estimated_monthly_compute_cost = estimated_monthly_credits * selected_plan_cost_per_credit
 
-    fig = px.parallel_coordinates(
-        df.iloc[:, st.session_state.start_dim-1:st.session_state.end_dim].join(df['Category'].rename('Category_Label')),  
-        color='Category_Label',  
-        color_continuous_scale='viridis'
-    )
+# Storage cost calculation
+estimated_storage_cost = storage_tb * storage_cost_per_tb[storage_type]
 
-    fig.update_layout(
-        coloraxis_showscale=False,  
-        margin=dict(l=30, r=30, b=0, t=100),
-        title="Parallel Coordinates of Embeddings"
-    )
+# Data transfer cost calculation
+estimated_transfer_cost = data_transfer_tb * transfer_cost_per_tb[transfer_type]
 
-    chart = st.plotly_chart(fig, use_container_width=True)
+# Total estimated cost
+total_estimated_monthly_cost = estimated_monthly_compute_cost + estimated_storage_cost + estimated_transfer_cost
 
-    if st.session_state.end_dim > len(df.columns)-1:
-        st.session_state.end_dim = len(df.columns)
-        subset_df = update_dimension_subset(st.session_state.start_dim-1, st.session_state.end_dim, df)
-        fig.data[0]['dimensions'] = [dict(range=[min(subset_df.iloc[:, i]), max(subset_df.iloc[:, i])],  
-        label=subset_df.columns[i], values=subset_df.iloc[:, i]) for i in range(len(subset_df.columns))]
-        chart.plotly_chart(fig, use_container_width=True)
+# Display the estimate
+st.header("Estimated Cost")
+st.write(f"**Plan:** {plan}")
+st.write(f"**Warehouse Size:** {warehouse_size}")
+st.write(f"**Estimated Monthly Compute Cost:** ${estimated_monthly_compute_cost:,.2f}")
+st.write(f"**Estimated Monthly Storage Cost:** ${estimated_storage_cost:,.2f}")
+st.write(f"**Estimated Monthly Data Transfer Cost:** ${estimated_transfer_cost:,.2f}")
+st.write(f"**Total Estimated Monthly Cost:** ${total_estimated_monthly_cost:,.2f}")
 
+st.markdown("""
+*Note: This is a guesstimate. Actual costs may vary based on other factors like data storage, data transfer, and additional services.
+""")
 
-    auto_update = st.checkbox('Continuous Data Flow')
-    if auto_update:
-        start_time = time.time()
-        while True:
-            current_time = time.time()
-            if current_time - start_time >= 1:
-                start_time = current_time
-                st.session_state.start_dim += 1
-                st.session_state.end_dim += 1
-                if st.session_state.end_dim > len(df.columns):
-                    st.session_state.start_dim = 0
-                    st.session_state.end_dim = 5
-                elif st.session_state.start_dim >= len(df.columns):
-                    st.session_state.start_dim = 0
-                    st.session_state.end_dim = min(5, len(df.columns))
-                
-                subset_df = update_dimension_subset(st.session_state.start_dim, st.session_state.end_dim+1, df)
-                fig.data[0]['dimensions'] = [dict(range=[min(subset_df.iloc[:, i]), max(subset_df.iloc[:, i])], label=subset_df.columns[i], values=subset_df.iloc[:, i]) for i in range(len(subset_df.columns))]
-                chart.plotly_chart(fig, use_container_width=True)
-            else:
-                time.sleep(0.05)
-    
-#----------------------------------------------------------------------------------------------------
-st.write("<br>", unsafe_allow_html=True)
-#----------------------------------------------------------------------------------------------------
-with st.container():
-    fig = go.Figure(data=go.Scatter(
-        x=umap_embeddings_2d[:, 0],
-        y=umap_embeddings_2d[:, 1],
-        mode='markers',
-        marker=dict(
-            color=[cluster_colors[label - 1] for label in cluster_labels_2d],
-            size=10,
-            opacity=0.7
-        ),
-        text=augmented_sentences,
-        hoverinfo='text'
-    ))
-    fig.update_layout(margin=dict(l=30, r=30, b=0, t=110))
-    fig.update_layout(
-        title='Scatter Plot Of Embeddings(2D)',
-        xaxis_title='X',
-        yaxis_title='Y',
-        height=500
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
+if st.checkbox("Show detailed calculation"):
+    st.write(f"Cost per credit for selected plan: ${selected_plan_cost_per_credit:,.2f}")
+    st.write(f"Credits per hour for selected warehouse size: {selected_warehouse_credits_per_hour} credits")
+    st.write(f"Estimated daily credits: {estimated_daily_credits:,.2f} credits")
+    st.write(f"Estimated monthly credits: {estimated_monthly_credits:,.2f} credits")
+    st.write(f"Storage cost per TB for selected type: ${storage_cost_per_tb[storage_type]:,.2f}")
+    st.write(f"Data transfer cost per TB for selected type: ${transfer_cost_per_tb[transfer_type]:,.2f}")
