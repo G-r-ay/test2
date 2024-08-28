@@ -1,9 +1,4 @@
-nltk
-torch
 numpy
 pandas
-umap-learn
-scikit-learn
-sentence_transformers
 streamlit
 plotly
