@@ -178,7 +178,7 @@ def create_line_plot(df):
         fig_line.add_trace(go.Scatter(x=device_logs['ingestion_time'], y=device_logs['n_datapoints'], mode='lines', name=device))
 
     fig_line.update_layout(
-        title='Daily Data Points by Anchor Device',
+        title='Daily Data Points Trend by Anchor Device',
         xaxis_title='Date',
         yaxis_title='Number of Data Points',
         legend_title='Anchor Device'
@@ -192,8 +192,6 @@ col1, col2, col3, col4 = st.columns(4)
 
 recent_date = daily_metrics['overall']['date'].max()
 
-
-# Safe method to extract recent metrics
 recent_metrics = {
     'total': daily_metrics['overall'][daily_metrics['overall']['date'] == recent_date]['total_datapoints'].values[0] if len(daily_metrics['overall'][daily_metrics['overall']['date'] == recent_date]) > 0 else 0,
     'automated': daily_metrics['automated'][daily_metrics['automated']['date'] == recent_date]['total_datapoints'].values[0] if len(daily_metrics['automated'][daily_metrics['automated']['date'] == recent_date]) > 0 else 0,
@@ -201,9 +199,9 @@ recent_metrics = {
     'anomalies': daily_metrics['automated'][daily_metrics['automated']['date'] == recent_date]['total_anomalies'].values[0] if len(daily_metrics['automated'][daily_metrics['automated']['date'] == recent_date]) > 0 else 0
 }
 
-col1.metric("Total Logs", f"{total_metrics['total_logs']:,.0f}", f"{recent_metrics['total']:,.0f}")
-col2.metric("Automated Logs", f"{total_metrics['automated_logs']:,.0f}", f"{recent_metrics['automated']:,.0f}")
-col3.metric("Static Logs", f"{total_metrics['static_logs']:,.0f}", f"{recent_metrics['static']:,.0f}")
+col1.metric("Total Data Points", f"{total_metrics['total_logs']:,.0f}", f"{recent_metrics['total']:,.0f}")
+col2.metric("Automated Data Points", f"{total_metrics['automated_logs']:,.0f}", f"{recent_metrics['automated']:,.0f}")
+col3.metric("Static Data Points", f"{total_metrics['static_logs']:,.0f}", f"{recent_metrics['static']:,.0f}")
 col4.metric("Anomalies (Automated)", f"{total_metrics['total_anomalies']:,.0f}", f"{recent_metrics['anomalies']:,.0f}")
 
 # Create tabs
@@ -219,13 +217,13 @@ with overall_tab:
         count = device_metrics['overall'].get(device, 0)  # Get count or default to 0
         if i % 3 == 0:
             with col1:
-                st.metric(f"{device} Logs", f"{count:,.0f}")
+                st.metric(f"{device} Data Points", f"{count:,.0f}")
         elif i % 3 == 1:
             with col2:
-                st.metric(f"{device} Logs", f"{count:,.0f}")
+                st.metric(f"{device} Data Points", f"{count:,.0f}")
         else:
             with col3:  
-                st.metric(f"{device} Logs", f"{count:,.0f}")
+                st.metric(f"{device} Data Points", f"{count:,.0f}")
 
 
 
@@ -235,14 +233,14 @@ with overall_tab:
         fig_trend.add_trace(go.Scatter(
             x=daily_metrics['static']['date'],
             y=daily_metrics['static']['total_datapoints'],
-            name='Static Logs'
+            name='Static Data Points'
         ))
         fig_trend.add_trace(go.Scatter(
             x=daily_metrics['automated']['date'],
             y=daily_metrics['automated']['total_datapoints'],
-            name='Automated Logs'
+            name='Automated Data Points'
         ))
-        fig_trend.update_layout(title='Daily Logs Trend by Ingestion Style')
+        fig_trend.update_layout(title='Daily Data Points Trend by Ingestion Style')
         st.plotly_chart(fig_trend, use_container_width=True)
 
     with col2:
@@ -261,13 +259,13 @@ with automated_tab:
     for i, (device, count) in enumerate(device_metrics['automated'].items()):
         if i % 3 == 0:
             with col1:
-                st.metric(f"{device} Logs", f"{count:,.0f}")
+                st.metric(f"{device} Data Points", f"{count:,.0f}")
         elif i % 3 == 1:
             with col2:
-                st.metric(f"{device} Logs", f"{count:,.0f}")
+                st.metric(f"{device} Data Points", f"{count:,.0f}")
         else:
             with col3:
-                st.metric(f"{device} Logs", f"{count:,.0f}")
+                st.metric(f"{device} Data Points", f"{count:,.0f}")
 
     col1, col2 = st.columns([0.7, 0.3])
     
@@ -275,7 +273,7 @@ with automated_tab:
         st.plotly_chart(create_line_plot(automated_data), use_container_width=True)
     
     with col2:
-        st.plotly_chart(create_pie_chart(automated_data, "Automated Logs - Anomalies Distribution"),
+        st.plotly_chart(create_pie_chart(automated_data, "Automated Data - Anomalies Distribution"),
                        use_container_width=True)
 
         
@@ -287,13 +285,13 @@ with static_tab:
     for i, (device, count) in enumerate(device_metrics['static'].items()):
         if i % 3 == 0:
             with col1:
-                st.metric(f"{device} Logs", f"{count:,.0f}")
+                st.metric(f"{device} Data Points", f"{count:,.0f}")
         elif i % 3 == 1:
             with col2:
-                st.metric(f"{device} Logs", f"{count:,.0f}")
+                st.metric(f"{device} Data Points", f"{count:,.0f}")
         else:
             with col3:
-                st.metric(f"{device} Logs", f"{count:,.0f}")
+                st.metric(f"{device} Data Points", f"{count:,.0f}")
 
     with st.container():
         col1, col2 = st.columns([0.7, 0.3])
@@ -302,38 +300,22 @@ with static_tab:
             st.plotly_chart(create_line_plot(static_data), use_container_width=True)
 
         with col2:
-            st.plotly_chart(create_pie_chart(static_data, "Static Logs Distribution"),
+            st.plotly_chart(create_pie_chart(static_data, "Static Data Distribution"),
                         use_container_width=True)
 
 
+
+
 with control:
-    st.subheader("Models",divider=True)
+    st.subheader("Models")
     if not highest_model_versions.empty:
         st.write("Model Information:")
         st.dataframe(highest_model_versions, use_container_width=True)
     else:
-        st.warning("Please initialize the base models by running `call management.create_resources()`")
-    st.subheader("Streams",divider=True)
+        st.warning("Please initialize the base models by running ```CALL MANAGEMENT.CREATE_RESOURCES()```")
+    st.subheader("Streams")
     if not streams_df.empty:
         st.write("Active Streams:")
         st.dataframe(streams_df, use_container_width=True)
     else:
         st.text("No active streams.")
-    
-    st.subheader("References",divider=True)
-    if not references_df.empty:
-        assigned_references = references_df[references_df['status'] == 'Assigned']
-        unassigned_references = references_df[references_df['status'] == 'Unassigned']
-        if not unassigned_references.empty:
-            st.write("Assigned References:")
-            st.dataframe(assigned_references, use_container_width=True)
-            st.divider()
-            st.warning("The references below haven't been assigned and will lead to errors if related code is executed.")
-            st.write("Unassigned References:")
-            st.dataframe(unassigned_references, use_container_width=True)
-            
-        else:
-            st.text("All references have been assigned.")
-            st.dataframe(references_df, use_container_width=True)
-    else:
-        st.warning("You have no references set and will be unable to take advantage of the features of this app. Please assign references to your application.", icon="⚠️")
